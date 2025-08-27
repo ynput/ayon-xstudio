@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from operator import itemgetter
 from typing import Any, Dict, List, Optional, Union
 
@@ -193,13 +194,20 @@ class XStudioViewAction(LocalAction):
                 "message": "Couldn't find xStudio executable.",
             }
 
-        filpath = os.path.normpath(event_values["path"])
+        filepath = os.path.normpath(event_values["path"])
+
+        # replace the frame number with padded '#'
+        filepath = re.sub(
+            r"(.*\.)(\d+)(\.\w{3})$",
+            lambda m: f"{m.group(1)}{'#' * len(m.group(2))}{m.group(3)}",
+            filepath,
+        )
 
         cmd: List[str] = [
             # xStudio path
             str(executable),
             # PATH TO COMPONENT
-            filpath,
+            filepath,
         ]
         self.log.info("Opening: %s", cmd)
 
@@ -211,7 +219,7 @@ class XStudioViewAction(LocalAction):
             return {
                 "success": False,
                 "message": (
-                    f'File "{os.path.basename(filpath)}" was not found.'
+                    f'File "{os.path.basename(filepath)}" was not found.'
                 ),
             }
 
