@@ -10,7 +10,7 @@ from ayon_server.settings import (
 class XStudioSettings(BaseSettingsModel):
     """xStudio addon settings."""
 
-    enabled: bool = SettingsField(True)
+    enabled: bool = SettingsField(True)  # noqa: FBT003
     xstudio_path: MultiplatformPathListModel = SettingsField(
         title="xStudio paths",
         default_factory=MultiplatformPathListModel,

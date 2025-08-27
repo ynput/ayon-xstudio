@@ -55,7 +55,7 @@ class XStudioViewAction(LocalAction):
 
         return self._executable_cache.get_path() is not None
 
-    def _get_versions_for_entity(self, entity: Any) -> List[Any]:
+    def _get_versions_for_entity(self, entity: Any) -> List[Any]:  # noqa: ANN401
         """Get asset versions for an entity.
 
         Args:
@@ -90,7 +90,7 @@ class XStudioViewAction(LocalAction):
 
         return versions
 
-    def _build_version_items(
+    def _build_version_items(  # noqa: PLR6301
         self, versions: List[Any]
     ) -> tuple[List[Dict[str, str]], Optional[str], Optional[str]]:
         """Build version items for the UI.
