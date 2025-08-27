@@ -17,7 +17,7 @@ class XStudioAddon(AYONAddon, IPluginPaths):
     name = ADDON_NAME  # type: ignore  # noqa: PGH003
     version = __version__  # type: ignore  # noqa: PGH003
 
-    def get_plugin_paths(self) -> dict[str, list[str]]:
+    def get_plugin_paths(self) -> dict[str, list[str]]:  # noqa: PLR6301
         """Get plugin paths for the addon.
 
         Returns:
