@@ -1,10 +1,32 @@
-"""Settings for the addon."""
-from typing import Any
+"""Defines server settings for xstudio."""
 
-from ayon_server.settings import BaseSettingsModel
+from ayon_server.settings import (
+    BaseSettingsModel,
+    MultiplatformPathListModel,
+    SettingsField,
+)
 
-DEFAULT_VALUES: dict[str, Any] = {}
+
+class XStudioSettings(BaseSettingsModel):
+    """xStudio addon settings."""
+
+    enabled: bool = SettingsField(True)  # noqa: FBT003
+    xstudio_path: MultiplatformPathListModel = SettingsField(
+        title="xStudio paths",
+        default_factory=MultiplatformPathListModel,
+        scope=["studio"],
+    )
 
 
-class MySettings(BaseSettingsModel):
-    """Settings for the addon."""
+DEFAULT_VALUES = {
+    "enabled": True,
+    "xstudio_path": {
+        "windows": [
+            "C:\\Program Files\\xSTUDIO.exe",
+        ],
+        "linux": [],
+        "darwin": [
+            "/Applications/xSTUDIO.app/Contents/MacOS/xstudio.bin",
+        ],
+    },
+}
