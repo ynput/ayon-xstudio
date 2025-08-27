@@ -23,7 +23,7 @@ class XStudioAddon(AYONAddon, IPluginPaths):
         Returns:
             Dict[str, List[str]]: A dictionary with plugin paths.
         """
-        return {"load": self.get_load_plugin_paths()}
+        return {}
 
     def get_load_plugin_paths(  # noqa: PLR6301
         self, host_name: Optional[str] = None
