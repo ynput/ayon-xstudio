@@ -55,39 +55,25 @@ class XStudioViewAction(LocalAction):
 
         return self._executable_cache.get_path() is not None
 
-    def interface(
-        self,
-        session: Any,  # noqa: ANN401
-        entities: List[Any],
-        event: Dict[str, Any],
-    ) -> Optional[Dict[str, Any]]:
-        """Generate the interface for the action.
+    def _get_versions_for_entity(self, entity: Any) -> List[Any]:
+        """Get asset versions for an entity.
 
         Args:
-            session: The ftrack session.
-            entities: List of entities.
-            event: The event dictionary.
+            entity: The entity to get versions for.
 
         Returns:
-            Optional[Dict[str, Any]]: Interface definition or None.
+            List of asset versions.
         """
-        # NOTE: `interface` is too complex (18 > 10)
-        #       Too many branches (19 > 12)
-
-        if event["data"].get("values", {}):
-            return None
-
-        entity = entities[0]
+        entity_type = entity.entity_type.lower()
         versions: List[Any] = []
 
-        entity_type = entity.entity_type.lower()
         if entity_type == "assetversion":
             if entity["components"][0]["file_type"][1:] in self.allowed_types:
                 versions.append(entity)
         else:
-            master_entity = entity
-            if entity_type == "task":
-                master_entity = entity["parent"]
+            master_entity = (
+                entity["parent"] if entity_type == "task" else entity
+            )
 
             for asset in master_entity["assets"]:
                 for version in asset["versions"]:
@@ -102,24 +88,25 @@ class XStudioViewAction(LocalAction):
                     if filetype[1:] in self.allowed_types:
                         versions.append(version)
 
-        if len(versions) < 1:
-            return {
-                "success": False,
-                "message": "There are no Asset Versions to open.",
-            }
+        return versions
 
-        path = self._executable_cache.get_path()
-        if not path:
-            return {
-                "success": False,
-                "message": "Couldn't find xStudio executable.",
-            }
+    def _build_version_items(
+        self, versions: List[Any]
+    ) -> tuple[List[Dict[str, str]], Optional[str], Optional[str]]:
+        """Build version items for the UI.
 
+        Args:
+            versions: List of asset versions.
+
+        Returns:
+            Tuple of (version_items, last_available, select_value).
+        """
         version_items: List[Dict[str, str]] = []
         base_label = "v{0} - {1} - {2}"
         default_component: Optional[str] = None
         last_available: Optional[str] = None
         select_value: Optional[str] = None
+
         for version in versions:
             for component in version["components"]:
                 label = base_label.format(
@@ -142,7 +129,48 @@ class XStudioViewAction(LocalAction):
                         select_value = file_path
                     version_items.append({"label": label, "value": file_path})
 
-        if len(version_items) == 0:
+        return version_items, last_available, select_value
+
+    def interface(
+        self,
+        session: Any,  # noqa: ANN401
+        entities: List[Any],
+        event: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """Generate the interface for the action.
+
+        Args:
+            session: The ftrack session.
+            entities: List of entities.
+            event: The event dictionary.
+
+        Returns:
+            Optional[Dict[str, Any]]: Interface definition or None.
+        """
+        if event["data"].get("values", {}):
+            return None
+
+        entity = entities[0]
+        versions = self._get_versions_for_entity(entity)
+
+        if not versions:
+            return {
+                "success": False,
+                "message": "There are no Asset Versions to open.",
+            }
+
+        path = self._executable_cache.get_path()
+        if not path:
+            return {
+                "success": False,
+                "message": "Couldn't find xStudio executable.",
+            }
+
+        version_items, last_available, select_value = (
+            self._build_version_items(versions)
+        )
+
+        if not version_items:
             return {
                 "success": False,
                 "message": (
@@ -158,10 +186,10 @@ class XStudioViewAction(LocalAction):
                 version_items, key=itemgetter("label"), reverse=True
             ),
         }
-        if select_value is not None:
-            item["value"] = select_value
-        else:
-            item["value"] = last_available
+
+        item["value"] = (
+            select_value if select_value is not None else last_available
+        )
 
         return {"items": [item]}
 
