@@ -1,7 +1,10 @@
 """Open an image, movie or sequence in xStudio from the Loader / Browser UI."""
 
+from __future__ import annotations
+
 import os
 import time
+from typing import Any, Dict, List, Optional
 
 import clique
 from ayon_core.lib import run_detached_process
@@ -31,7 +34,7 @@ class OpenInXStudio(load.LoaderPlugin):
     color = "aquamarine"
 
     @classmethod
-    def get_xstudio_path(cls):  # noqa: ANN206
+    def get_xstudio_path(cls) -> Optional[str]:
         """Get the path to the xStudio executable.
 
         Returns:
@@ -40,7 +43,7 @@ class OpenInXStudio(load.LoaderPlugin):
         return cls._executable_cache.get_path()
 
     @classmethod
-    def is_compatible_loader(cls, context: dict) -> bool:
+    def is_compatible_loader(cls, context: Dict[str, Any]) -> bool:
         """Check if the loader is compatible with the given context.
 
         Args:
@@ -53,7 +56,13 @@ class OpenInXStudio(load.LoaderPlugin):
             return False
         return super().is_compatible_loader(context)
 
-    def load(self, context, name=None, namespace=None, options=None) -> None:  # noqa: ANN001
+    def load(
+        self,
+        context: Dict[str, Any],
+        name: Optional[str] = None,
+        namespace: Optional[str] = None,
+        options: Optional[Any] = None,  # noqa: ANN401
+    ) -> None:
         """Load the given context in xStudio.
 
         Args:
@@ -62,16 +71,17 @@ class OpenInXStudio(load.LoaderPlugin):
             namespace (Optional[str]): The namespace of the item to load.
             options (Optional[Any]): Additional options for loading.
         """
-        # print("YAY")
         path = self.filepath_from_context(context)
         fdir, fname = os.path.split(str(path))
 
         pattern = clique.PATTERNS["frames"]
         files = os.listdir(fdir)
+        collections: List[Any]
+        remainder: List[str]
         collections, remainder = clique.assemble(
             files, patterns=[pattern], minimum_items=1
         )
-        first_image = None
+        first_image: Optional[str] = None
         for other_file in remainder:
             if other_file == fname:
                 first_image = other_file
@@ -90,7 +100,7 @@ class OpenInXStudio(load.LoaderPlugin):
         self.log.info("Opening xStudio with : %s", filepath)
 
         executable = self.get_xstudio_path()
-        cmd = [
+        cmd: List[str] = [
             # xStudio path
             str(executable),
             # PATH TO COMPONENT

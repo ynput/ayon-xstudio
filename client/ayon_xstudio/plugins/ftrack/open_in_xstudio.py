@@ -1,7 +1,10 @@
 """Open an image, movie or sequence in xStudio from ftrack."""
 
+from __future__ import annotations
+
 import os
 from operator import itemgetter
+from typing import Any, Dict, List, Optional, Union
 
 from ayon_core.lib import run_detached_process
 from ayon_core.lib.transcoding import IMAGE_EXTENSIONS, VIDEO_EXTENSIONS
@@ -25,7 +28,12 @@ class XStudioViewAction(LocalAction):
     }
     _executable_cache = XStudioExecutableCache()
 
-    def discover(self, session, entities, event):  # noqa: ANN001, ANN201
+    def discover(
+        self,
+        session: Any,  # noqa: ANN401
+        entities: List[Any],
+        event: Dict[str, Any],
+    ) -> bool:
         """Return available actions based on *event*."""
         selection = event["data"].get("selection", [])
         if len(selection) != 1:
@@ -37,12 +45,20 @@ class XStudioViewAction(LocalAction):
 
         return self._executable_cache.get_path() is not None
 
-    def interface(self, session, entities, event):  # noqa: ANN001, ANN201, C901, D102, PLR0912
+    def interface(
+        self,
+        session: Any,  # noqa: ANN401
+        entities: List[Any],
+        event: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        # NOTE: `interface` is too complex (18 > 10)
+        #       Too many branches (19 > 12)
+
         if event["data"].get("values", {}):
             return None
 
         entity = entities[0]
-        versions = []
+        versions: List[Any] = []
 
         entity_type = entity.entity_type.lower()
         if entity_type == "assetversion":
@@ -79,11 +95,11 @@ class XStudioViewAction(LocalAction):
                 "message": "Couldn't find xStudio executable.",
             }
 
-        version_items = []
+        version_items: List[Dict[str, str]] = []
         base_label = "v{0} - {1} - {2}"
-        default_component = None
-        last_available = None
-        select_value = None
+        default_component: Optional[str] = None
+        last_available: Optional[str] = None
+        select_value: Optional[str] = None
         for version in versions:
             for component in version["components"]:
                 label = base_label.format(
@@ -114,7 +130,7 @@ class XStudioViewAction(LocalAction):
                 ),
             }
 
-        item = {
+        item: Dict[str, Any] = {
             "label": "Items to view",
             "type": "enumerator",
             "name": "path",
@@ -129,7 +145,12 @@ class XStudioViewAction(LocalAction):
 
         return {"items": [item]}
 
-    def launch(self, session, entities, event):  # noqa: ANN001, ANN201
+    def launch(
+        self,
+        session: Any,  # noqa: ANN401
+        entities: List[Any],
+        event: Dict[str, Any],
+    ) -> Union[bool, Dict[str, Any]]:
         """Callback method for xStudioView action.
 
         Returns:
@@ -149,7 +170,7 @@ class XStudioViewAction(LocalAction):
 
         filpath = os.path.normpath(event_values["path"])
 
-        cmd = [
+        cmd: List[str] = [
             # xStudio path
             str(executable),
             # PATH TO COMPONENT
@@ -172,6 +193,6 @@ class XStudioViewAction(LocalAction):
         return True
 
 
-def register(session) -> None:  # noqa: ANN001
+def register(session: Any) -> None:  # noqa: ANN401
     """Register hooks."""
     XStudioViewAction(session).register()
