@@ -25,7 +25,7 @@ class XStudioAddon(AYONAddon, IPluginPaths):
         """
         return {"load": self.get_load_plugin_paths()}
 
-    def get_load_plugin_paths(
+    def get_load_plugin_paths(  # noqa: PLR6301
         self, host_name: Optional[str] = None
     ) -> List[str]:
         """Get load plugin paths.
