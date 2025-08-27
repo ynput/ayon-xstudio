@@ -34,7 +34,16 @@ class XStudioViewAction(LocalAction):
         entities: List[Any],
         event: Dict[str, Any],
     ) -> bool:
-        """Return available actions based on *event*."""
+        """Return available actions based on event.
+
+        Args:
+            session: The ftrack session.
+            entities: List of entities.
+            event: The event dictionary.
+
+        Returns:
+            bool: True if action is available, False otherwise.
+        """
         selection = event["data"].get("selection", [])
         if len(selection) != 1:
             return False
@@ -51,6 +60,16 @@ class XStudioViewAction(LocalAction):
         entities: List[Any],
         event: Dict[str, Any],
     ) -> Optional[Dict[str, Any]]:
+        """Generate the interface for the action.
+
+        Args:
+            session: The ftrack session.
+            entities: List of entities.
+            event: The event dictionary.
+
+        Returns:
+            Optional[Dict[str, Any]]: Interface definition or None.
+        """
         # NOTE: `interface` is too complex (18 > 10)
         #       Too many branches (19 > 12)
 
@@ -153,8 +172,14 @@ class XStudioViewAction(LocalAction):
     ) -> Union[bool, Dict[str, Any]]:
         """Callback method for xStudioView action.
 
+        Args:
+            session: The ftrack session.
+            entities: List of entities.
+            event: The event dictionary.
+
         Returns:
-            True if the application was launched.
+            Union[bool, Dict[str, Any]]: True if application was launched,
+                or a dictionary with success status and message.
         """
         # Launching application
         event_values = event["data"].get("values")
@@ -194,5 +219,9 @@ class XStudioViewAction(LocalAction):
 
 
 def register(session: Any) -> None:  # noqa: ANN401
-    """Register hooks."""
+    """Register hooks.
+
+    Args:
+        session: The ftrack session.
+    """
     XStudioViewAction(session).register()

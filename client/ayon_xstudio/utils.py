@@ -14,10 +14,23 @@ from .version import __version__
 
 
 def get_base_xstudio_icon_url() -> str:
+    """Get the base URL for the xStudio icon.
+
+    Returns:
+        str: The base URL for the xStudio icon.
+    """
     return f"addons/{ADDON_NAME}/{__version__}/public/xstudio.png"
 
 
 def get_xstudio_icon_url(server_url: Optional[str] = None) -> str:
+    """Get the full URL for the xStudio icon.
+
+    Args:
+        server_url: Optional server URL. If not provided, uses the default.
+
+    Returns:
+        str: The full URL for the xStudio icon.
+    """
     server_url = server_url or ayon_api.get_base_url()
     return f"{server_url}/{get_base_xstudio_icon_url()}"
 
@@ -25,6 +38,14 @@ def get_xstudio_icon_url(server_url: Optional[str] = None) -> str:
 def get_xstudio_paths_from_settings(
     addon_settings: Optional[Dict[str, Any]] = None,
 ) -> List[str]:
+    """Get xStudio paths from addon settings.
+
+    Args:
+        addon_settings: Optional addon settings dictionary.
+
+    Returns:
+        List[str]: List of xStudio paths.
+    """
     if addon_settings is None:
         addon_settings = ayon_api.get_addon_settings(ADDON_NAME, __version__)
 
@@ -39,6 +60,15 @@ def get_xstudio_executable_path(
     paths: Optional[List[str]] = None,
     addon_settings: Optional[Dict[str, Any]] = None,
 ) -> Optional[str]:
+    """Get the xStudio executable path.
+
+    Args:
+        paths: Optional list of paths to check.
+        addon_settings: Optional addon settings dictionary.
+
+    Returns:
+        Optional[str]: Path to xStudio executable or None if not found.
+    """
     if paths is None:
         paths = get_xstudio_paths_from_settings(addon_settings)
 

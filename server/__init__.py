@@ -13,6 +13,10 @@ class XStudioAddon(BaseServerAddon):
     settings_model: Type[XStudioSettings] = XStudioSettings
 
     async def get_default_settings(self) -> XStudioSettings:
-        """Return default settings."""
-        settings_model_cls = self.get_settings_model()
+        """Return default settings for the addon.
+
+        Returns:
+            XStudioSettings: Default settings for the addon.
+        """
+        settings_model_cls: Type[XStudioSettings] = self.get_settings_model()
         return settings_model_cls(**DEFAULT_VALUES)

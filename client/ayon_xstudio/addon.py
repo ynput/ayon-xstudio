@@ -17,17 +17,35 @@ class XStudioAddon(AYONAddon, IPluginPaths):
     name = ADDON_NAME  # type: ignore  # noqa: PGH003
     version = __version__  # type: ignore  # noqa: PGH003
 
-    def get_plugin_paths(self) -> Dict[str, List[str]]:  # noqa: D102
+    def get_plugin_paths(self) -> Dict[str, List[str]]:
+        """Get plugin paths for the addon.
+
+        Returns:
+            Dict[str, List[str]]: A dictionary with plugin paths.
+        """
         return {"load": self.get_load_plugin_paths()}
 
     def get_load_plugin_paths(
         self, host_name: Optional[str] = None
     ) -> List[str]:
+        """Get load plugin paths.
+
+        Args:
+            host_name: Optional host name to filter paths.
+
+        Returns:
+            List[str]: List of load plugin paths.
+        """
         return [
             os.path.join(XSTUDIO_ROOT, "plugins", "load"),
         ]
 
-    def get_ftrack_event_handler_paths(self) -> Dict[str, List[str]]:  # noqa: D102, PLR6301
+    def get_ftrack_event_handler_paths(self) -> Dict[str, List[str]]:  # noqa: PLR6301
+        """Get ftrack event handler paths.
+
+        Returns:
+            Dict[str, List[str]]: A dictionary with ftrack event handler paths.
+        """
         return {
             "user": [
                 os.path.join(XSTUDIO_ROOT, "plugins", "ftrack"),
