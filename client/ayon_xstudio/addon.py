@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Dict, List, Optional
+from typing import Optional
 
 from ayon_core.addon import AYONAddon, IPluginPaths
 
@@ -17,7 +17,7 @@ class XStudioAddon(AYONAddon, IPluginPaths):
     name = ADDON_NAME  # type: ignore  # noqa: PGH003
     version = __version__  # type: ignore  # noqa: PGH003
 
-    def get_plugin_paths(self) -> Dict[str, List[str]]:
+    def get_plugin_paths(self) -> dict[str, list[str]]:
         """Get plugin paths for the addon.
 
         Returns:
@@ -27,7 +27,7 @@ class XStudioAddon(AYONAddon, IPluginPaths):
 
     def get_load_plugin_paths(  # noqa: PLR6301
         self, host_name: Optional[str] = None
-    ) -> List[str]:
+    ) -> list[str]:
         """Get load plugin paths.
 
         Args:
@@ -40,7 +40,7 @@ class XStudioAddon(AYONAddon, IPluginPaths):
             os.path.join(XSTUDIO_ROOT, "plugins", "load"),
         ]
 
-    def get_ftrack_event_handler_paths(self) -> Dict[str, List[str]]:  # noqa: PLR6301
+    def get_ftrack_event_handler_paths(self) -> dict[str, list[str]]:  # noqa: PLR6301
         """Get ftrack event handler paths.
 
         Returns:
