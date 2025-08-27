@@ -92,8 +92,11 @@ class OpenInXStudio(load.LoaderPlugin):
             # NOTE: clique padding == 0 when the seq number does not start
             # with 0. "1001" has a padding of 0 and "0101" has a padding of 1.
             # we output the seq path with hashes.
-            pad = "#" * (seq.padding + len(str(next(iter(seq.indexes)))))
-            first_image = f"{seq.head}{pad}{seq.tail}"
+            idxs = list(seq.indexes)
+            pad = "#" * (seq.padding + len(str(idxs[0])))
+            first_image = (
+                f"{seq.head}{pad}{seq.tail}={idxs[0]}-{idxs[-1]}"
+            )
 
         filepath = os.path.normpath(os.path.join(fdir, first_image))
 
