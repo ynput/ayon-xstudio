@@ -39,15 +39,3 @@ class XStudioAddon(AYONAddon, IPluginPaths):
         return [
             os.path.join(XSTUDIO_ROOT, "plugins", "load"),
         ]
-
-    def get_ftrack_event_handler_paths(self) -> dict[str, list[str]]:  # noqa: PLR6301
-        """Get ftrack event handler paths.
-
-        Returns:
-            Dict[str, List[str]]: A dictionary with ftrack event handler paths.
-        """
-        return {
-            "user": [
-                os.path.join(XSTUDIO_ROOT, "plugins", "ftrack"),
-            ]
-        }
