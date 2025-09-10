@@ -4,16 +4,19 @@ from __future__ import annotations
 
 import os
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import clique
-from ayon_core.lib import run_detached_process
+from ayon_core.lib import Logger, StringTemplate, run_detached_process
 from ayon_core.lib.transcoding import IMAGE_EXTENSIONS, VIDEO_EXTENSIONS
-from ayon_core.pipeline import load
+from ayon_core.pipeline import Anatomy, load
 from ayon_xstudio.utils import (
     XStudioExecutableCache,
     get_base_xstudio_icon_url,
 )
+
+log = Logger.get_logger(__name__)
 
 
 class OpenInXStudio(load.LoaderPlugin):
@@ -71,6 +74,7 @@ class OpenInXStudio(load.LoaderPlugin):
             namespace (Optional[str]): The namespace of the item to load.
             options (Optional[Any]): Additional options for loading.
         """
+        # print(context)
         path = self.filepath_from_context(context)
         fdir, fname = os.path.split(str(path))
 
@@ -94,9 +98,7 @@ class OpenInXStudio(load.LoaderPlugin):
             # we output the seq path with hashes.
             idxs = list(seq.indexes)
             pad = "#" * (seq.padding + len(str(idxs[0])))
-            first_image = (
-                f"{seq.head}{pad}{seq.tail}={idxs[0]}-{idxs[-1]}"
-            )
+            first_image = f"{seq.head}{pad}{seq.tail}={idxs[0]}-{idxs[-1]}"
 
         filepath = os.path.normpath(os.path.join(fdir, first_image))
 
@@ -110,9 +112,12 @@ class OpenInXStudio(load.LoaderPlugin):
             filepath,
         ]
 
+        # TODO(plp): Is there a get_ayon_env() somewhere ?
+        ayon_env = _set_ocio_env_var(context, dict(os.environ))
+
         try:
             # Run xStudio with these commands
-            run_detached_process(cmd)
+            run_detached_process(cmd, env=ayon_env)
             # Keep process in memory for some time
             time.sleep(0.1)
 
@@ -120,3 +125,47 @@ class OpenInXStudio(load.LoaderPlugin):
             self.log.error(  # noqa: TRY400
                 'File "%s" was not found.', os.path.basename(filepath)
             )
+
+
+def _set_ocio_env_var(context: Dict[str, Any], env: dict) -> None:
+    representation: dict = context.get("representation", {})
+    if not representation:
+        err = "Couldn't find 'representation' in context !"
+        raise KeyError(err)
+
+    colorspace_data: dict = representation.get("data", {}).get(
+        "colorspaceData", {}
+    )
+    if not colorspace_data:
+        log.warning("Couldn't find 'colorspaceData' in representation.")
+        log.warning("Not configuring OCIO !")
+        return
+
+    ocio_path = colorspace_data.get("config", {}).get("path")
+    if not ocio_path:
+        log.warning("Representation OCIO path undefined")
+        log.warning("Not configuring OCIO !")
+        return
+
+    ocio_path = Path(ocio_path)
+    if ocio_path.is_absolute():
+        ocio_path = ocio_path.resolve()
+
+    anatomy = Anatomy(context["project"]["name"])
+    ok, rootless_path = anatomy.find_root_template_from_path(
+        ocio_path.as_posix()
+    )
+    if ok:
+        ocio_path = StringTemplate.format_strict_template(
+            rootless_path,
+            {"root": anatomy.roots},
+        )
+    else:
+        log.warning(
+            "Failed to derootify OCIO config path: %s", ocio_path.as_posix()
+        )
+        log.info("anatomy.roots = %s", anatomy.roots)
+        log.warning("Not configuring OCIO !")
+        return
+
+    env["OCIO"] = ocio_path
