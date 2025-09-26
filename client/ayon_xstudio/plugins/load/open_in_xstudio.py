@@ -97,7 +97,7 @@ class OpenInXStudio(load.LoaderPlugin):
             # with 0. "1001" has a padding of 0 and "0101" has a padding of 1.
             # we output the seq path with hashes.
             idxs = list(seq.indexes)
-            pad = "#" * (seq.padding + len(str(idxs[0])))
+            pad = "#" * len(str(idxs[-1]))
             first_image = f"{seq.head}{pad}{seq.tail}={idxs[0]}-{idxs[-1]}"
 
         filepath = os.path.normpath(os.path.join(fdir, first_image))
@@ -113,7 +113,8 @@ class OpenInXStudio(load.LoaderPlugin):
         ]
 
         # TODO(plp): Is there a get_ayon_env() somewhere ?
-        ayon_env = _set_ocio_env_var(context, dict(os.environ))
+        ayon_env = dict(os.environ)
+        _set_ocio_env_var(context, ayon_env)
 
         try:
             # Run xStudio with these commands
@@ -160,7 +161,7 @@ def _set_ocio_env_var(context: Dict[str, Any], env: dict) -> None:
             rootless_path,
             {"root": anatomy.roots},
         )
-    else:
+    elif not ocio_path.exists():
         log.warning(
             "Failed to derootify OCIO config path: %s", ocio_path.as_posix()
         )
