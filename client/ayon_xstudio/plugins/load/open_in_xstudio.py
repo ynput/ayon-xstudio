@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import clique
 from ayon_core.lib import Logger, StringTemplate, run_detached_process
@@ -128,7 +128,54 @@ class OpenInXStudio(load.LoaderPlugin):
             )
 
 
+def find_ayon_ocio_config(ocio_path: Path) -> Union[Path, None]:
+    """Find the AYON OCIO config path.
+
+    Args:
+        ocio_path (Path): The path to the OCIO config.
+
+    Returns:
+        Union[Path, None]: The path to the AYON OCIO config if found, None
+            otherwise.
+    """
+    log.debug(f"representation ocio: {ocio_path.as_posix()}")
+    path = Path(ocio_path)
+
+    if "OpenColorIOConfigs" not in path.parts:
+        return None
+
+    try:
+        from ayon_ocio import get_ocio_config_path
+
+    except ImportError:
+        pass
+    else:
+        ocio_folder = get_ocio_config_path()
+        log.debug(f"ocio root: {ocio_folder}")
+        folder_index = path.parts.index("OpenColorIOConfigs")
+        server_ocio = Path(ocio_folder).joinpath(
+            *path.parts[folder_index + 1 :]
+        )
+        log.debug(f"server_ocio = {server_ocio}")
+        if server_ocio.exists():
+            return server_ocio
+        else:
+            log.debug("server_ocio doesn't exist !")
+
+    return None
+
+
 def _set_ocio_env_var(context: Dict[str, Any], env: dict) -> None:
+    """Set the OCIO environment variable based on the given context.
+
+    Args:
+        context (dict): The context to use for setting the OCIO environment
+            variable.
+        env (dict): The environment variables to update.
+
+    Raises:
+        KeyError: If the 'representation' key is not found in the context.
+    """
     representation: dict = context.get("representation", {})
     if not representation:
         err = "Couldn't find 'representation' in context !"
@@ -152,21 +199,19 @@ def _set_ocio_env_var(context: Dict[str, Any], env: dict) -> None:
     if ocio_path.is_absolute():
         ocio_path = ocio_path.resolve()
 
-    anatomy = Anatomy(context["project"]["name"])
-    ok, rootless_path = anatomy.find_root_template_from_path(
-        ocio_path.as_posix()
-    )
-    if ok:
-        ocio_path = StringTemplate.format_strict_template(
-            rootless_path,
-            {"root": anatomy.roots},
+    if not ocio_path.exists():
+        anatomy = Anatomy(context["project"]["name"])
+        ok, rootless_path = anatomy.find_root_template_from_path(
+            ocio_path.as_posix()
         )
-    elif not ocio_path.exists():
-        log.warning(
-            "Failed to derootify OCIO config path: %s", ocio_path.as_posix()
-        )
-        log.info("anatomy.roots = %s", anatomy.roots)
-        log.warning("Not configuring OCIO !")
-        return
+        if ok:
+            ocio_path = StringTemplate.format_strict_template(
+                rootless_path, {"root": anatomy.roots}
+            )
+        else:
+            ocio_path = find_ayon_ocio_config(ocio_path)
+            if not ocio_path:
+                log.warning("Not configuring xSTUDIO OCIO !")
+                return
 
     env["OCIO"] = ocio_path
