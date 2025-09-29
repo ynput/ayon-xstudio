@@ -138,7 +138,7 @@ def find_ayon_ocio_config(ocio_path: Path) -> Union[Path, None]:
         Union[Path, None]: The path to the AYON OCIO config if found, None
             otherwise.
     """
-    log.debug(f"representation ocio: {ocio_path.as_posix()}")
+    log.debug("representation ocio: %s", ocio_path.as_posix())
     path = Path(ocio_path)
 
     if "OpenColorIOConfigs" not in path.parts:
@@ -151,16 +151,16 @@ def find_ayon_ocio_config(ocio_path: Path) -> Union[Path, None]:
         pass
     else:
         ocio_folder = get_ocio_config_path()
-        log.debug(f"ocio root: {ocio_folder}")
+        log.debug("ocio root: %s", ocio_folder)
         folder_index = path.parts.index("OpenColorIOConfigs")
         server_ocio = Path(ocio_folder).joinpath(
             *path.parts[folder_index + 1 :]
         )
-        log.debug(f"server_ocio = {server_ocio}")
+        log.debug("server_ocio = %s", server_ocio)
         if server_ocio.exists():
             return server_ocio
-        else:
-            log.debug("server_ocio doesn't exist !")
+
+        log.debug("server_ocio doesn't exist !")
 
     return None
 
