@@ -101,6 +101,13 @@ class OpenInDJV(LoaderActionPlugin):
         data: dict[str, Any],
         form_values: dict[str, Any],
     ) -> Optional[LoaderActionResult]:
+        executable = self.get_xstudio_path()
+        if not executable:
+            return LoaderActionResult(
+                "Couldn't find xStudio executable.",
+                success=False,
+            )
+
         repre_id = data["representation_id"]
         repre = next(
             iter(selection.entities.get_representations({repre_id})),
@@ -154,24 +161,12 @@ class OpenInDJV(LoaderActionPlugin):
 
         filepath = os.path.normpath(os.path.join(fdir, first_image))
         self.log.info("Opening xStudio with : %s", filepath)
-        executable = self.get_xstudio_path()
+
         cmd: list[str] = [
             # xStudio path
             str(executable),
             # PATH TO COMPONENT
             filepath,
-        ]
-        if not executable:
-            return LoaderActionResult(
-                "Couldn't find xStudio executable.",
-                success=False,
-            )
-
-        cmd = [
-            # DJV path
-            str(executable),
-            # PATH TO COMPONENT
-            filepath
         ]
         # Run DJV with these commands
         run_detached_process(cmd)
