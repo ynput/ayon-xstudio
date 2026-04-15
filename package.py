@@ -20,7 +20,7 @@ client_dir = "ayon_xstudio"
 # Mapping of addon name to version requirements
 # - addon with specified version range must exist to be able to use this addon
 ayon_required_addons = {
-    "core": ">0.3.2",
+    "core": ">=1.6.10",
 }
 # Mapping of addon name to version requirements
 # - if addon is used in the same bundle, the version range must be valid
