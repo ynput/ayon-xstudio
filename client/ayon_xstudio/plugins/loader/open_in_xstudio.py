@@ -21,7 +21,7 @@ from ayon_xstudio.utils import (
 )
 
 
-class OpenInDJV(LoaderActionPlugin):
+class OpenInXStudio(LoaderActionPlugin):
     """Open Image Sequence or Video with system default"""
     identifier = "xstudio.open-in-xstudio"
 
@@ -168,7 +168,7 @@ class OpenInDJV(LoaderActionPlugin):
             # PATH TO COMPONENT
             filepath,
         ]
-        # Run DJV with these commands
+        # Run XStudio with these commands
         run_detached_process(cmd)
         # Keep process in memory for some time
         time.sleep(0.1)
