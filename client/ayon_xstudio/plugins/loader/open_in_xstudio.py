@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import os
 import collections
 import time
-from typing import Optional, Any
+from pathlib import Path
+import typing
+from typing import Any, Optional
 
 import clique
 
-from ayon_core.lib import run_detached_process
+from ayon_core.lib import run_detached_process, StringTemplate
+
 from ayon_core.lib.transcoding import IMAGE_EXTENSIONS, VIDEO_EXTENSIONS
 from ayon_core.pipeline.load import get_representation_path_with_anatomy
 from ayon_core.pipeline.actions import (
@@ -19,6 +24,8 @@ from ayon_xstudio.utils import (
     XStudioExecutableCache,
     get_base_xstudio_icon_url,
 )
+if typing.TYPE_CHECKING:
+    from ayon_core.pipeline import Anatomy
 
 
 class OpenInXStudio(LoaderActionPlugin):
@@ -142,7 +149,7 @@ class OpenInXStudio(LoaderActionPlugin):
         collections, remainder = clique.assemble(
             files, patterns=[pattern], minimum_items=1
         )
-        first_image: Optional[str] = None
+        first_image: str | None = None
         for other_file in remainder:
             if other_file == fname:
                 first_image = other_file
@@ -154,13 +161,18 @@ class OpenInXStudio(LoaderActionPlugin):
             # with 0. "1001" has a padding of 0 and "0101" has a padding of 1.
             # we output the seq path with hashes.
             idxs = list(seq.indexes)
-            pad = "#" * (seq.padding + len(str(idxs[0])))
-            first_image = (
-                f"{seq.head}{pad}{seq.tail}={idxs[0]}-{idxs[-1]}"
-            )
+            pad = "#" * len(str(idxs[-1]))
+            first_image = f"{seq.head}{pad}{seq.tail}={idxs[0]}-{idxs[-1]}"
 
         filepath = os.path.normpath(os.path.join(fdir, first_image))
         self.log.info("Opening xStudio with : %s", filepath)
+
+        anatomy = selection.get_project_anatomy()
+        # TODO(plp): Is there a get_ayon_env() somewhere ?
+        env = dict(os.environ)
+        ocio_path = self._get_ocio_path(anatomy, repre)
+        if ocio_path:
+            env["OCIO"] = ocio_path
 
         cmd: list[str] = [
             # xStudio path
@@ -169,7 +181,7 @@ class OpenInXStudio(LoaderActionPlugin):
             filepath,
         ]
         # Run XStudio with these commands
-        run_detached_process(cmd)
+        run_detached_process(cmd, env=env)
         # Keep process in memory for some time
         time.sleep(0.1)
 
@@ -177,3 +189,106 @@ class OpenInXStudio(LoaderActionPlugin):
             "File opened in xStudio...",
             success=True,
         )
+
+    def _get_ocio_path(
+        self,
+        anatomy: Anatomy,
+        repre_entity: dict[str, Any],
+    ) -> str | None:
+        """Set the OCIO environment variable based on the given context.
+
+        Args:
+            anatomy (Anatomy): Project anatomy.
+            repre_entity (dict): Representation entity.
+
+        Raises:
+            KeyError: If the 'representation' key is not found in the context.
+        """
+        colorspace_config: dict = (
+            repre_entity
+            .get("data", {})
+            .get("colorspaceData", {})
+            .get("config", {})
+        )
+        if not colorspace_config:
+            self.log.info(
+                "Couldn't find 'colorspaceData.config' in representation."
+                " Not configuring OCIO"
+            )
+            return None
+
+        ocio_template: str | None = colorspace_config.get("template")
+        if ocio_template:
+            data = os.environ.copy()
+            data["root"] = anatomy.roots
+            ocio_path = StringTemplate.format_template(
+                ocio_template, data
+            )
+            if ocio_path.solved and os.path.exists(ocio_path):
+                return str(ocio_path)
+
+        ocio_path = colorspace_config.get("path")
+        if not ocio_path:
+            self.log.info(
+                "Representation OCIO path undefined."
+                " Not configuring OCIO"
+            )
+            return None
+
+        ocio_path = Path(ocio_path)
+        if ocio_path.is_absolute():
+            ocio_path = ocio_path.resolve()
+
+        if ocio_path.exists():
+            return str(ocio_path)
+
+        success, rootless_path = anatomy.find_root_template_from_path(
+            ocio_path.as_posix()
+        )
+        if success:
+            return StringTemplate.format_strict_template(
+                rootless_path, {"root": anatomy.roots}
+            )
+
+        ocio_path = self.find_ayon_ocio_config(ocio_path)
+        if ocio_path:
+            return str(ocio_path)
+
+        self.log.info("Not configuring xSTUDIO OCIO !")
+        return None
+
+    def find_ayon_ocio_config(self, ocio_path: Path) -> Path | None:
+        """Find the AYON OCIO config path.
+
+        Args:
+            ocio_path (Path): The path to the OCIO config.
+
+        Returns:
+            Path | None: The path to the AYON OCIO config if found, None
+                otherwise.
+        """
+        self.log.debug("representation ocio: %s", ocio_path.as_posix())
+        path = Path(ocio_path)
+
+        if "OpenColorIOConfigs" not in path.parts:
+            return None
+
+        try:
+            from ayon_ocio import get_ocio_config_path
+
+        except ImportError:
+            pass
+        else:
+            ocio_folder = get_ocio_config_path()
+            self.log.debug("ocio root: %s", ocio_folder)
+            folder_index = path.parts.index("OpenColorIOConfigs")
+            server_ocio = Path(ocio_folder).joinpath(
+                *path.parts[folder_index + 1 :]
+            )
+            self.log.debug("server_ocio = %s", server_ocio)
+            if server_ocio.exists():
+                return server_ocio
+
+            self.log.debug("server_ocio doesn't exist !")
+
+        return None

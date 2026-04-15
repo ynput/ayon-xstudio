@@ -22,7 +22,7 @@ DEFAULT_VALUES = {
     "enabled": True,
     "xstudio_path": {
         "windows": [
-            "C:\\Program Files\\xSTUDIO.exe",
+            "C:\\Program Files\\xstudio_v0.12.0-win64\\bin\\xstudio.exe",
         ],
         "linux": [],
         "darwin": [
