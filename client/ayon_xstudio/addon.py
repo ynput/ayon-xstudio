@@ -17,15 +17,7 @@ class XStudioAddon(AYONAddon, IPluginPaths):
     name = ADDON_NAME  # type: ignore  # noqa: PGH003
     version = __version__  # type: ignore  # noqa: PGH003
 
-    def get_plugin_paths(self) -> dict[str, list[str]]:  # noqa: PLR6301
-        """Get plugin paths for the addon.
-
-        Returns:
-            Dict[str, List[str]]: A dictionary with plugin paths.
-        """
-        return {}
-
-    def get_load_plugin_paths(  # noqa: PLR6301
+    def get_loader_action_plugin_paths(  # noqa: PLR6301
         self, host_name: Optional[str] = None
     ) -> list[str]:
         """Get load plugin paths.
@@ -37,5 +29,5 @@ class XStudioAddon(AYONAddon, IPluginPaths):
             List[str]: List of load plugin paths.
         """
         return [
-            os.path.join(XSTUDIO_ROOT, "plugins", "load"),
+            os.path.join(XSTUDIO_ROOT, "plugins", "loader"),
         ]
